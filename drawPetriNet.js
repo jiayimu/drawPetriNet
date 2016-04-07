@@ -1,49 +1,44 @@
-// Last updated August 2010 by Simon Sarris
+//Copyright 2016 by Jiayi Mu
+// reference: Simon Sarris
 // www.simonsarris.com
 // sarris@acm.org
-//
-// Free to use and distribute at will
-// So long as you are nice to people, etc
 
-//Box object to hold data for all drawn rects
-//function Box() {
-//  this.x = 0;
-//  this.y = 0;
-//  this.w = 1; // default width and height?
-//  this.h = 1;
-//  this.fill = '#444444';
-//}
-function Circle() {
+
+//all object to hold data for all drawn circle
+function All() {
   this.x = 0;
   this.y = 0;
   this.r = 0;
+  this.sr = 0;
+  this.w = 0; // default width and height?
+  this.h = 0;
   this.fill = '#444444';
+  this.stroke = '#000000';
 }
 
-//Initialize a new Box, add it, and invalidate the canvas
-//function addRect(x, y, w, h, fill) {
-//  var rect = new Box;
-//  rect.x = x;
-//  rect.y = y;
-//  rect.w = w;
-//  rect.h = h;
-//  rect.fill = fill;
-//  boxes.push(rect);
-//  invalidate();
-//}
-function addCircle(x, y, radius, fill) {
-  var rect = new Circle;
-  rect.x = x;
-  rect.y = y;
-  rect.r = radius;
-  rect.fill = fill;
-  circles.push(rect);
+//Initialize a new Circle, add it, and invalidate the canvas
+function addObject(x, y, radius, sr, w, h, fill,stroke) {
+  var all = new All;
+  all.x = x;
+  all.y = y;
+  if(radius != 0){
+    all.r = radius;
+    all.fill = fill;
+    all.stroke = stroke;
+  }else if(sr != 0){
+    all.sr = sr;
+    all.fill = fill;
+  }else{
+    all.w = w;
+    all.h = h;
+    all.fill = fill;
+  }
+  objects.push(all);
   invalidate();
 }
 
-// holds all our rectangles
-//var boxes = [];
-var circles = [];
+// holds all our circles
+var objects = [];
 
 var canvas;
 var ctx;
@@ -111,15 +106,6 @@ function init() {
   canvas.onmousedown = myDown;
   canvas.onmouseup = myUp;
   canvas.ondblclick = myDblClick;
-
-  // add custom initialization here:
-
-  // add an orange rectangle
-  //addRect(200, 200, 40, 40, '#FFC02B');
-  //addCircle(200, 200, 20, '#FFC02B');
-
-  // add a smaller blue rectangle
-  //addRect(25, 90, 25, 25, '#2BB8FF');
 }
 
 //wipes the canvas context
@@ -135,26 +121,29 @@ function draw() {
 
     // Add stuff you want drawn in the background all the time here
 
-    // draw all boxes
-    //var l = boxes.length;
-    //for (var i = 0; i < l; i++) {
-    //  drawshape(ctx, boxes[i], boxes[i].fill);
-    //}
-
-    var len = circles.length;
+    var len = objects.length;
     for (var i = 0; i < len; i++) {
-      drawshape(ctx, circles[i], circles[i].fill);
+      drawshape(ctx, objects[i], objects[i].fill,objects[i].stroke);
     }
 
 
     // draw selection
     // right now this is just a stroke along the edge of the selected box
     if (mySel != null) {
-      ctx.beginPath();
       ctx.strokeStyle = mySelColor;
       ctx.lineWidth = mySelWidth;
-      ctx.arc(mySel.x,mySel.y,25,0*Math.PI,2*Math.PI);
-      ctx.stroke();
+      if(mySel.r !=0){
+        ctx.beginPath();
+        ctx.arc(mySel.x,mySel.y,mySel.r,0*Math.PI,2*Math.PI);
+        ctx.stroke();
+      }else if(mySel.sr !=0){
+        ctx.beginPath();
+        ctx.arc(mySel.x,mySel.y,mySel.sr,0*Math.PI,2*Math.PI);
+        ctx.stroke();
+      }else{
+        ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
+      }
+
     }
 
     // Add stuff you want drawn on top all the time here
@@ -167,19 +156,27 @@ function draw() {
 // Draws a single shape to a single context
 // draw() will call this with the normal canvas
 // myDown will call this with the ghost canvas
-function drawshape(context, shape, fill) {
-  context.beginPath();
-  context.fillStyle = fill;
+function drawshape(context, shape, fill,stroke) {
 
+  context.fillStyle = fill;
+  context.strokeStyle = stroke;
   // We can skip the drawing of elements that have moved off the screen:
   if (shape.x > WIDTH || shape.y > HEIGHT) return;
-  //if (shape.x + shape.w < 0 || shape.y + shape.h < 0) return;
   if (shape.x + shape.r < 0 || shape.y + shape.r < 0) return;
 
-  //context.fillRect(shape.x,shape.y,shape.w,shape.h);
+  if(shape.r!=0){
+    context.beginPath();
+    context.arc(shape.x,shape.y,shape.r,0*Math.PI,2*Math.PI);
+    context.fill();
+    context.stroke();
+  }else if(shape.sr !=0){
+    context.beginPath();
+    context.arc(shape.x,shape.y,shape.sr,0*Math.PI,2*Math.PI);
+    context.fill();
+  }else{
+    context.fillRect(shape.x,shape.y,shape.w,shape.h);
+  }
 
-  context.arc(shape.x,shape.y,25,0*Math.PI,2*Math.PI);
-  context.fill();
 }
 
 // Happens when the mouse is moving inside the canvas
@@ -199,17 +196,17 @@ function myMove(e){
 function myDown(e){
   getMouse(e);
   clear(gctx);
-  var l = circles.length;
+  var l = objects.length;
   for (var i = l-1; i >= 0; i--) {
     // draw shape onto ghost context
-    drawshape(gctx, circles[i], 'black');
+    drawshape(gctx, objects[i], 'black','red');
 
     // get image data at the mouse x,y pixel
     var imageData = gctx.getImageData(mx, my, 1, 1);
 
     // if the mouse pixel exists, select and break
     if (imageData.data[3] > 0) {
-      mySel = circles[i];
+      mySel = objects[i];
       offsetx = mx - mySel.x;
       offsety = my - mySel.y;
       mySel.x = mx - offsetx;
@@ -238,12 +235,8 @@ function myUp(){
 // adds a new node
 function myDblClick(e) {
   getMouse(e);
-  // for this method width and height determine the starting X and Y, too.
-  // so I left them as vars in case someone wanted to make them args for something and copy this code
-  //var width = 20;
-  //var height = 20;
-  //addRect(mx - (width / 2), my - (height / 2), width, height, '#77DD44');
-  addCircle(mx, my, 20, '#ffffff');
+
+  addObject(mx, my, 50, 0, 0, 0, '#ffffff','#000000');
 }
 
 function invalidate() {

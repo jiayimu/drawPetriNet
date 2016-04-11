@@ -27,14 +27,16 @@
     <div class="row">
       <h1>Draw Petri Net</h1>
     </div>
-    <button id="circle" onclick="addObject(200,200,50, 0, 0, 0, '#ffffff','#000000')">Draw a circle</button>
+    <button id="circle" onclick="addObject(200,200,40, 0, 0, 0,0,0,0,0, '#ffffff','#000000')">Draw a circle</button>
     <div>you could also double click to draw the circle</div>
-    <button id="rectangle" onclick="addObject(200,200,0,0,100,7,'#000000','#ffffff')">Draw a rectangle</button>
-    <button id="smallCircle" onclick="addObject(200,200,0,10,0,0,'#000000','#ffffff')">Draw a small circle</button>
+    <button id="rectangle" onclick="addObject(200,200,0,0,100,7,0,0,0,0,'#000000','#ffffff')">Draw a rectangle</button>
+    <button id="line" onclick="addObject(200,200,0,0,0,0,250,200,0,0,'#000000','#ffffff')">Draw a line</button>
+    <button id="arrow" onclick="addObject(200,200,0,0,0,0,0,0,250,200,'#000000','#ffffff')">Draw a arrow</button>
+    <button id="smallCircle" onclick="addObject(200,200,0,10,0,0,0,0,0,0,'#000000','#ffffff')">Draw a small circle</button>
     <div class="row">
       <canvas class="canvas" id="canvas" width="800" height="600"></canvas>
       <script src="drawPetriNet.js"></script>
-      <!--<script src="test.js"></script>-->
+      <!-- <script src="test.js"></script> -->
     </div>
 
   </div>

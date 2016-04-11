@@ -12,12 +12,17 @@ function All() {
   this.sr = 0;
   this.w = 0; // default width and height?
   this.h = 0;
+  this.toPoint = {x:0,y:0};
+  this.arrowPoint1 = {x:0,y:0};
+  this.arrowPoint2 = {x:0,y:0};
+  this.arrowToPoint = {x:0,y:0};
+  this.arrowLineAngle = 0;
   this.fill = '#444444';
   this.stroke = '#000000';
 }
 
 //Initialize a new Circle, add it, and invalidate the canvas
-function addObject(x, y, radius, sr, w, h, fill,stroke) {
+function addObject(x, y, radius, sr, w, h,toPointX, toPointY,arrowToPointX,arrowToPointY, fill,stroke) {
   var all = new All;
   all.x = x;
   all.y = y;
@@ -28,9 +33,28 @@ function addObject(x, y, radius, sr, w, h, fill,stroke) {
   }else if(sr != 0){
     all.sr = sr;
     all.fill = fill;
-  }else{
+  }else if(w!=0 ||h!=0){
     all.w = w;
     all.h = h;
+    all.fill = fill;
+  }else if(toPointX!=0 || toPointY!=0){
+    all.toPoint.x = toPointX;
+    all.toPoint.y = toPointY;
+    all.fill = fill;
+  }else{
+    //how to draw arrow: (reference)http://www.dbp-consulting.com/tutorials/canvas/CanvasArrow.html
+    //the length of hypotenuse
+    var ht = 20;
+    all.arrowToPoint.x = arrowToPointX;
+    all.arrowToPoint.y = arrowToPointY;
+    all.arrowLineAngle = Math.atan2( y-arrowToPointY, x-arrowToPointX);
+
+    // the angle of the arrow
+    var angle = 5*Math.PI/6;
+    all.arrowPoint1.x = arrowToPointX + Math.cos(all.arrowLineAngle+Math.PI+angle) * ht;
+    all.arrowPoint1.y = arrowToPointY + Math.sin(all.arrowLineAngle+Math.PI+angle) * ht;
+    all.arrowPoint2.x = arrowToPointX + Math.cos(all.arrowLineAngle+Math.PI-angle) * ht;
+    all.arrowPoint2.y = arrowToPointY + Math.sin(all.arrowLineAngle+Math.PI-angle) * ht;
     all.fill = fill;
   }
   objects.push(all);
@@ -140,10 +164,24 @@ function draw() {
         ctx.beginPath();
         ctx.arc(mySel.x,mySel.y,mySel.sr,0*Math.PI,2*Math.PI);
         ctx.stroke();
-      }else{
+      }else if(mySel.w !=0 || mySel.h !=0){
         ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
+      }else if(mySel.toPoint.x!=0 || mySel.toPoint.y!=0){
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.moveTo(mySel.x,mySel.y);
+        ctx.lineTo(mySel.toPoint.x,mySel.toPoint.y);
+        ctx.stroke();
+      }else{
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.moveTo(mySel.x,mySel.y);
+        ctx.lineTo(mySel.arrowToPoint.x,mySel.arrowToPoint.y);
+        ctx.lineTo(mySel.arrowPoint1.x,mySel.arrowPoint1.y);
+        ctx.moveTo(mySel.arrowToPoint.x,mySel.arrowToPoint.y);
+        ctx.lineTo(mySel.arrowPoint2.x,mySel.arrowPoint2.y);
+        ctx.stroke();
       }
-
     }
 
     // Add stuff you want drawn on top all the time here
@@ -173,20 +211,63 @@ function drawshape(context, shape, fill,stroke) {
     context.beginPath();
     context.arc(shape.x,shape.y,shape.sr,0*Math.PI,2*Math.PI);
     context.fill();
-  }else{
+  }else if(shape.w !=0 || shape.h !=0){
     context.fillRect(shape.x,shape.y,shape.w,shape.h);
+  }else if(shape.toPoint.x!=0 || shape.toPoint.y!=0){
+    context.beginPath();
+    context.lineWidth = 3;
+    context.moveTo(shape.x,shape.y);
+    context.lineTo(shape.toPoint.x,shape.toPoint.y);
+    context.stroke();
+  }else{
+    context.beginPath();
+    context.lineWidth = 3;
+    context.moveTo(shape.x,shape.y);
+    context.lineTo(shape.arrowToPoint.x,shape.arrowToPoint.y);
+    context.lineTo(shape.arrowPoint1.x,shape.arrowPoint1.y);
+    context.moveTo(shape.arrowToPoint.x,shape.arrowToPoint.y);
+    context.lineTo(shape.arrowPoint2.x,shape.arrowPoint2.y);
+    context.stroke();
   }
+}
 
+function checkKey(e,context,shape){
+  if(e.keyCode == 46){
+    if(shape.r!=0){
+      //context.clearRect(shape.x-shape.r,shape.y-shape.r,2*shape.r,2*shape.r);
+      objects.splice(mySel,1);
+    }else if(shape.sr !=0){
+      context.clearRect(shape.x-shape.sr,shape.y-shape.sr,2*shape.sr,2*shape.sr);
+    }else{
+      context.clearRect(shape.x,shape.y,shape.w,shape.h);
+    }
+  }
 }
 
 // Happens when the mouse is moving inside the canvas
 function myMove(e){
   if (isDrag){
+    var px = mySel.x;
+    var py = mySel.y;
     getMouse(e);
 
     mySel.x = mx - offsetx;
     mySel.y = my - offsety;
 
+
+    var dx = mySel.x - px;
+    var dy = mySel.y - py;
+    if(mySel.toPoint.x!=0 || mySel.toPoint.y!=0) {
+      mySel.toPoint.x += dx;
+      mySel.toPoint.y += dy;
+    }else if(mySel.arrowToPoint.x!=0 || mySel.arrowToPoint.y!=0){
+      mySel.arrowToPoint.x += dx;
+      mySel.arrowToPoint.y += dy;
+      mySel.arrowPoint1.x += dx;
+      mySel.arrowPoint1.y += dy;
+      mySel.arrowPoint2.x += dx;
+      mySel.arrowPoint2.y += dy;
+    }
     // something is changing position so we better invalidate the canvas!
     invalidate();
   }
@@ -236,7 +317,7 @@ function myUp(){
 function myDblClick(e) {
   getMouse(e);
 
-  addObject(mx, my, 50, 0, 0, 0, '#ffffff','#000000');
+  addObject(mx, my, 40, 0, 0, 0, 0, 0, 0, 0, '#ffffff','#000000');
 }
 
 function invalidate() {
